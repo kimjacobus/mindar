@@ -1,5 +1,8 @@
 import './style.css';
 
+
+const BASE = import.meta.env.BASE_URL;
+
 document.querySelector('#app').innerHTML = `
   <div class="hud">
     <div class="badge">WebAR Prototype</div>
@@ -20,11 +23,11 @@ document.querySelector('#app').innerHTML = `
     renderer="colorManagement: true; physicallyCorrectLights: true"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes; uiLoading: yes;"
+    mindar-image="imageTargetSrc: ${BASE}targets.mind; autoStart: false; uiScanning: yes; uiLoading: yes;"
   >
     <a-assets>
       <!-- Drop your GLB into /public and rename it model.glb (or edit this path). -->
-      <a-asset-item id="model" src="./model.glb"></a-asset-item>
+      <a-asset-item id="model" src="${BASE}model.glb"></a-asset-item>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>

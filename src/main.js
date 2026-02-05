@@ -53,45 +53,25 @@ document.querySelector('#app').innerHTML = `
   </a-scene>
 `;
 
-async function loadScriptsOnce() {
-  // A‑Frame
-  await loadScript('https://aframe.io/releases/1.5.0/aframe.min.js');
-  // MindAR A‑Frame build (CDN)
-  await loadScript('https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js');
-}
-
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[src="${src}"]`);
-    if (existing) return resolve();
-    const s = document.createElement('script');
-    s.src = src;
-    s.async = true;
-    s.onload = resolve;
-    s.onerror = () => reject(new Error(`Failed to load ${src}`));
-    document.head.appendChild(s);
-  });
-}
-
 document.getElementById('startBtn').addEventListener('click', async () => {
   const btn = document.getElementById('startBtn');
   btn.disabled = true;
   btn.textContent = 'Starting…';
 
   try {
-    await loadScriptsOnce();
-
-    // When scripts load, A-Frame registers custom elements and builds the scene.
-    // We wait one animation frame so the scene exists.
-    await new Promise(r => requestAnimationFrame(r));
-
     const scene = document.querySelector('a-scene');
     if (!scene) throw new Error('Scene not found.');
 
-    // MindAR exposes a system named "mindar-image-system" in A‑Frame.
+    // ✅ Wait until A-Frame fully initializes the scene + systems (prevents ui undefined)
+    if (!scene.hasLoaded) {
+      await new Promise((resolve) =>
+        scene.addEventListener('loaded', resolve, { once: true })
+      );
+    }
+
     const mindarSystem = scene.systems['mindar-image-system'];
     if (!mindarSystem) {
-      throw new Error('MindAR system not found. Check that targets.mind exists in /public.');
+      throw new Error('MindAR system not found. Make sure mindar-image-aframe script is loaded before the scene.');
     }
 
     await mindarSystem.start();
@@ -100,13 +80,6 @@ document.getElementById('startBtn').addEventListener('click', async () => {
     console.error(e);
     btn.disabled = false;
     btn.textContent = 'Start AR';
-    alert(
-      `Could not start AR.\n\n` +
-      `${e?.message || e}\n\n` +
-      `Common fixes:\n` +
-      `• Make sure /public/targets.mind exists (compiled from your image)\n` +
-      `• Use HTTPS when testing on phones (or a tunnel)\n` +
-      `• Try Safari on iPhone, Chrome on Android`
-    );
+    alert(`Could not start AR.\n\n${e?.message || e}`);
   }
 });

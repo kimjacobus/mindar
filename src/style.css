@@ -1,0 +1,66 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #0b0c10;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+#app {
+  height: 100%;
+}
+
+.hud {
+  position: fixed;
+  z-index: 10;
+  left: 12px;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.92);
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+.hint {
+  width: fit-content;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.55);
+  color: rgba(255,255,255,0.92);
+  font-size: 14px;
+  line-height: 1.25rem;
+  backdrop-filter: blur(8px);
+}
+
+.btn {
+  pointer-events: auto;
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.92);
+  font-size: 14px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+}
+
+.link {
+  pointer-events: auto;
+  width: fit-content;
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  text-decoration: underline;
+}

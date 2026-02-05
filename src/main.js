@@ -23,7 +23,7 @@ document.querySelector('#app').innerHTML = `
     renderer="colorManagement: true; physicallyCorrectLights: true"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    mindar-image="imageTargetSrc: ${BASE}targets.mind; autoStart: false; uiScanning: yes; uiLoading: yes;"
+    mindar-image="imageTargetSrc: ${BASE}targets.mind; autoStart: false; uiScanning: no; uiLoading: no;"
   >
     <a-assets>
       <!-- Drop your GLB into /public and rename it model.glb (or edit this path). -->
@@ -58,28 +58,49 @@ document.getElementById('startBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Starting…';
 
+  const fail = (msg, err) => {
+    console.error(msg, err);
+    btn.disabled = false;
+    btn.textContent = 'Start AR';
+    alert(msg + (err?.message ? `\n\n${err.message}` : ''));
+  };
+
   try {
     const scene = document.querySelector('a-scene');
     if (!scene) throw new Error('Scene not found.');
 
-    // ✅ Wait until A-Frame fully initializes the scene + systems (prevents ui undefined)
+    // 1) Wait until A-Frame finished initializing
     if (!scene.hasLoaded) {
-      await new Promise((resolve) =>
-        scene.addEventListener('loaded', resolve, { once: true })
-      );
+      await new Promise((resolve) => scene.addEventListener('loaded', resolve, { once: true }));
     }
 
-    const mindarSystem = scene.systems['mindar-image-system'];
-    if (!mindarSystem) {
-      throw new Error('MindAR system not found. Make sure mindar-image-aframe script is loaded before the scene.');
+    // 2) Wait until renderer is actually running (helps avoid timing weirdness)
+    await new Promise((resolve) => scene.addEventListener('renderstart', resolve, { once: true }));
+
+    // 3) Preflight camera permission INSIDE the click gesture
+    // This removes a whole class of "stuck" starts.
+    let tmpStream = null;
+    try {
+      tmpStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } finally {
+      if (tmpStream) tmpStream.getTracks().forEach((t) => t.stop());
     }
 
-    await mindarSystem.start();
+    const sys = scene.systems['mindar-image-system'];
+    if (!sys) throw new Error('MindAR system not found (script not loaded or scene created too early).');
+
+    // 4) Add a timeout so you never get stuck forever
+    const startPromise = sys.start();
+
+    await Promise.race([
+      startPromise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('MindAR start timed out (camera blocked or initialization stalled).')), 8000)
+      ),
+    ]);
+
     btn.textContent = 'AR Running ✅';
   } catch (e) {
-    console.error(e);
-    btn.disabled = false;
-    btn.textContent = 'Start AR';
-    alert(`Could not start AR.\n\n${e?.message || e}`);
+    fail('Could not start AR.', e);
   }
 });
